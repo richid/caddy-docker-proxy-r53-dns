@@ -3,8 +3,7 @@ FROM caddy:${CADDY_VERSION}-builder AS builder
 
 RUN xcaddy build \
     --with github.com/lucaslorentz/caddy-docker-proxy/v2 \
-    --with github.com/caddy-dns/route53 \
-    --replace github.com/libdns/route53=github.com/winterqt/libdns-route53@upgrade-aws-sdk
+    --with github.com/caddy-dns/route53
 
 FROM caddy:${CADDY_VERSION}-alpine
 
