@@ -4,10 +4,9 @@
 
 ## Publishing new versions
 
-This repository publishes new images to GitHub's [container registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) automatically when a new tag is pushed.
-These tags should be tied to the underlying version of Caddy being used.
+Each push to `main` publishes a new image to GitHub's [container registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) at `ghcr.io/richid/caddy-docker-proxy-r53-dns:<version>` and `:latest`.
+The tag is the Caddy version in the `FROM caddy:<version>-alpine` line of the `Dockerfile`.
+Pull requests build the image but do not publish it.
 
-Process:
-1. Update `Dockerfile` with new Caddy version
-2. Create a new tag/release using the version from above
-3. GitHub Action kicks off and generates a new image available at `ghcr.io/richid/caddy-docker-proxy-r53-dns:(<version>:latest)`
+Renovate updates the Caddy base images and the plugin versions in the `Dockerfile`.
+Minor and patch updates merge automatically when the build passes.
