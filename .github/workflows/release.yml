@@ -15,7 +15,7 @@ jobs:
   Build-and-Push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       attestations: write
       id-token: write
@@ -27,8 +27,19 @@ jobs:
         run: echo "caddy=$(sed -n 's/^FROM caddy:\([0-9.]*\)-alpine$/\1/p' Dockerfile)" >> "$GITHUB_OUTPUT"
       - name: Check Caddy version
         run: test -n "${{ steps.version.outputs.caddy }}"
+      - name: Check for an existing release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.caddy }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ] && ! gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Log into container registry
-        if: github.event_name != 'pull_request'
+        if: steps.release.outputs.publish == 'true'
         uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
@@ -47,13 +58,19 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ steps.release.outputs.publish == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Generate artifact attestation
-        if: github.event_name != 'pull_request'
+        if: steps.release.outputs.publish == 'true'
         uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
+      - name: Create release
+        if: steps.release.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.caddy }}
+        run: gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --generate-notes
