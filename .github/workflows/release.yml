@@ -21,7 +21,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Read Caddy version
         id: version
         run: echo "caddy=$(sed -n 's/^FROM caddy:\([0-9.]*\)-alpine$/\1/p' Dockerfile)" >> "$GITHUB_OUTPUT"
